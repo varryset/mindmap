@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html><head><link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#6c5ce7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Mind Map">
+<link rel="apple-touch-icon" href="icon-192.png"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Mind Map</title>
+<style>
+:root{--bg:#f6f7fb;--fg:#1d1f27;--card:#fff;--mut:#7a8094;--line:#e2e5ee}
+@media(prefers-color-scheme:dark){:root{--bg:#14161c;--fg:#eceef4;--card:#20232c;--mut:#9aa1b5;--line:#2f3340}}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{font:14px system-ui,sans-serif;background:var(--bg);color:var(--fg);overflow:hidden;display:flex;flex-direction:column}
+header{display:flex;gap:6px;align-items:center;padding:8px;background:var(--card);border-bottom:1px solid var(--line)}
+#title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700;text-align:left}
+#st{font-size:11px;color:var(--mut)}
+button,input,textarea,select{font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 11px}
+button.pri{background:#6c5ce7;color:#fff;border-color:#6c5ce7}
+button:disabled{opacity:.4}
+#cv{flex:1;width:100%;min-height:0;touch-action:none;display:block;user-select:none;-webkit-user-select:none}
+#bar{position:fixed;left:0;right:0;bottom:0;display:none;gap:6px;justify-content:center;padding:8px 8px calc(8px + env(safe-area-inset-bottom));background:var(--card);border-top:1px solid var(--line)}
+#bar{flex-wrap:wrap}
+#bar.show{display:flex}
+.sheet{position:fixed;inset:0;background:#0007;display:none;align-items:flex-end;z-index:5}
+.sheet.show{display:flex}
+.sheet>div{background:var(--card);width:100%;max-height:88%;overflow:auto;border-radius:16px 16px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom))}
+.sheet label{display:block;margin:10px 0 4px;color:var(--mut);font-size:12px}
+.sheet input,.sheet textarea,.sheet select{width:100%}
+.row{display:flex;gap:8px;align-items:center;margin-top:12px}
+.row>*{flex:1}
+.sw{display:flex;gap:8px;flex-wrap:wrap}
+.sw i{width:34px;height:34px;border-radius:50%;border:3px solid transparent;display:block}
+.sw i.on{border-color:var(--fg);box-shadow:0 0 0 2px var(--card) inset}
+.map{display:flex;gap:6px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.map span{flex:1}
+.map input{flex:1;min-width:0}
+.map button{flex:none;padding:8px 10px}
+#toast{position:fixed;top:60px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:8px 14px;border-radius:10px;display:none;z-index:9;max-width:90%}
+#np{max-width:100%;max-height:140px;border-radius:8px;margin-top:8px;display:none}
+header button{padding:8px 9px}
+#st{font-size:14px;line-height:1}
+.sw>div{display:flex;flex-direction:column;align-items:center;width:58px}
+.sw small{font-size:10px;color:var(--mut);max-width:58px;height:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dot{width:26px;height:26px;border-radius:50%;flex:none;display:inline-block}
+.cnt{flex:none;font-size:12px;color:var(--mut);min-width:54px;text-align:right}
+#lg{position:fixed;left:8px;bottom:8px;display:none;flex-wrap:wrap;gap:6px;max-width:calc(100% - 16px);z-index:2}
+#lg span{display:flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:4px 10px 4px 6px;font-size:12px;cursor:pointer}
+#lg i{width:12px;height:12px;border-radius:50%;display:inline-block}
+#lg span.on{outline:2px solid var(--fg)}
+#lg span[data-mode],#lg span[data-clear]{padding:4px 10px;font-weight:700}
+#lg span{user-select:none;-webkit-user-select:none;touch-action:none}
+#lg span[data-c]:not([data-c^="!"]){cursor:grab}
+#lg span[data-toggle]{padding:4px 10px;font-weight:700}
+#legSheet{z-index:7}
+#editTags{color:#6c5ce7;font-weight:700;cursor:pointer}
+.ckrow{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+.sheet .ckrow input[type=checkbox]{width:24px;height:24px;flex:none;padding:0}
+#nz{flex:2}
+.flow{animation:flow .8s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-14}}
+@media(prefers-reduced-motion:reduce){.flow{animation:none}}
+#ki{position:fixed;right:8px;top:60px;z-index:2;width:34px;height:34px;border-radius:50%;padding:0;font-weight:700;opacity:.85}
+#keySheet .kr{display:flex;gap:12px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}
+#keySheet .kr svg{flex:none;color:var(--fg)}
+#keySheet .kr div{flex:1;font-size:13px;line-height:1.35}
+.sticky{position:sticky;top:-16px;z-index:2;background:var(--card);margin:-16px -16px 6px!important;padding:12px 16px;border-bottom:1px solid var(--line)}
+.sticky b{text-align:center}
+#qn{position:fixed;z-index:6;display:none;background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 28px #0005;padding:8px;width:270px;max-width:calc(100% - 16px)}
+#qn.show{display:block}
+#qn.dock{left:8px;right:8px;top:58px;width:auto}
+#qn .qh{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+#qn .qh b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+#qn .qh button{flex:none;padding:4px 9px;font-size:12px}
+#qn textarea{width:100%;min-height:96px;resize:vertical;display:block}
+</style></head>
+<body>
+<header>
+  <button id="bm">☰</button>
+  <button id="title">Loading…</button>
+  <span id="st"></span>
+  <button id="un">↶</button><button id="re">↷</button>
+  <button id="bl" style="display:none">Lanes</button>
+  <button id="bt">🏷 Tags</button>
+  <button id="lay">Free</button>
+  <button id="sh">📤</button>
+</header>
+<svg id="cv"><g id="g"></g></svg>
+<div id="bar">
+  <button id="bc" class="pri">＋ Child</button><button id="bs">＋ Sibling</button>
+  <button id="bn" title="Notes">📝</button><button id="bk" title="Merge other nodes into this one">🔗</button><button id="bd">Details</button><button id="bx">🗑</button>
+</div>
+<button id="ki" title="How to read the lines">ⓘ</button>
+<div id="toast"></div>
+<div id="qn"><div class="qh"><b id="qnh"></b><button id="qnd">Details</button><button id="qnx">✕</button></div><textarea id="qnt" placeholder="Add a note…"></textarea></div>
+<div class="sheet" id="lb" style="align-items:center;justify-content:center;z-index:8;background:#000d"><img id="lbi" alt="" style="max-width:94vw;max-height:84vh;border-radius:8px;background:#fff"><button id="lbx" style="position:absolute;top:14px;right:14px">✕</button></div>
+
+<div class="sheet" id="mapsSheet"><div>
+  <div class="row" style="margin:0 0 6px"><b>My maps</b><button id="nm" class="pri">＋ New map</button><button id="cm">Close</button></div>
+  <div id="maps"></div>
+</div></div>
+
+<div class="sheet" id="laneSheet"><div>
+  <div class="row" style="margin:0 0 6px"><b>Lanes</b><button id="lc" class="pri">Done</button></div>
+  <div id="lanes"></div>
+  <div class="row"><input id="newlane" placeholder="New lane name"><button id="addlane">＋ Add</button></div>
+  <p style="color:var(--mut);font-size:12px">Tip: you can also drag a lane header left or right to reorder.</p>
+</div></div>
+
+<div id="lg"></div>
+<div class="sheet" id="legSheet"><div>
+  <div class="row" style="margin:0 0 6px"><b>Colour tags</b><button id="legx" class="pri">Done</button></div>
+  <p style="color:var(--mut);font-size:12px;margin:0 0 6px">Give each colour a meaning, e.g. red = Urgent, blue = Priya. You can rename any time. Named colours show as chips at the bottom of the map with a count: tap one or several to filter, or drag a chip onto a node to tag it. Tap a tag on a node to remove it. A node can carry several colours; they are blended and each one shows as a small badge on the node.</p>
+  <div id="legRows"></div>
+</div></div>
+
+<div class="sheet" id="keySheet"><div>
+  <div class="row sticky"><span></span><b>Reading the lines</b><button id="kx" class="pri">Got it</button></div>
+  <div class="kr"><svg width="76" height="22" viewBox="0 0 76 22"><circle cx="5" cy="11" r="3.5" fill="currentColor"/><path d="M5 11H62" stroke="currentColor" stroke-width="2.5"/><path d="M72 11l-10 -6l0 12z" fill="currentColor"/></svg><div><b>Solid line</b> – main flow. The <b>dot</b> is where it starts, the <b>arrow</b> is where it ends.</div></div>
+  <div class="kr"><svg width="76" height="22" viewBox="0 0 76 22"><circle cx="5" cy="11" r="3.5" fill="currentColor"/><path d="M5 11H62" stroke="currentColor" stroke-width="2.5" stroke-dasharray="7 5"/><path d="M72 11l-10 -6l0 12z" fill="currentColor"/></svg><div><b>Dashed line</b> – an extra link: this node also feeds into the node at the arrow.</div></div>
+  <div class="kr"><svg width="76" height="30" viewBox="0 0 76 30"><circle cx="64" cy="5" r="3.5" fill="currentColor"/><path d="M64 5C64 28 14 28 14 12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-dasharray="7 5"/><path d="M14 3l-6 10l12 0z" fill="currentColor"/><circle cx="39" cy="22" r="8" fill="#fff3a8" stroke="currentColor"/><text x="39" y="26" text-anchor="middle" font-size="11" fill="#3b3200">↺</text></svg><div><b>↺ Loop back</b> – feeds back to an earlier node. It curves underneath the nodes.</div></div>
+  <div class="kr"><svg width="76" height="22" viewBox="0 0 76 22"><rect x="6" y="2" width="64" height="18" rx="9" fill="#fff3a8" stroke="currentColor"/><text x="38" y="15" text-anchor="middle" font-size="11" fill="#3b3200">cleaned</text></svg><div><b>Yellow pill</b> – the process note on that line. Tap a line or pill to edit it.</div></div>
+  <div class="kr"><svg width="76" height="22" viewBox="0 0 76 22"><path d="M5 11H62" stroke="currentColor" stroke-width="3.5"/><path class="flow" d="M5 11H62" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-dasharray="1 13"/><path d="M72 11l-10 -6l0 12z" fill="currentColor"/></svg><div><b>Tap a node</b> – its lines light up and little dots run from start to end. Everything else fades. Tap empty space to see all lines again.</div></div>
+</div></div>
+
+<div class="sheet" id="edgeSheet"><div>
+  <div class="row sticky"><button id="ec">Cancel</button><b>Line note</b><button id="ed" class="pri">Done</button></div>
+  <p id="eh" style="margin:8px 0 0;color:var(--mut)"></p>
+  <label>Process / transformation note (shown on the line)</label>
+  <input id="et" maxlength="120" enterkeyhint="done" autocomplete="off" placeholder="e.g. cleaned &amp; merged · feeds back for re-work">
+  <div class="row"><button id="er">Remove this link</button></div>
+</div></div>
+
+<div class="sheet" id="nodeSheet"><div>
+  <div class="row sticky"><button id="nc">Cancel</button><b>Edit node</b><button id="nd" class="pri">Done</button></div>
+  <label>Title</label><input id="nt" enterkeyhint="done" autocomplete="off">
+  <label>Notes</label><textarea id="nn" rows="4"></textarea>
+  <label>Link (URL, shown as a short link on the node)</label><input id="nu" type="url" inputmode="url" placeholder="https://…">
+  <label>Lane</label><select id="nl"></select>
+  <div id="inl"></div>
+  <label>Colours / tags (tap several to combine) <a id="editTags"> · name these colours ✎</a></label><div class="sw" id="sw"></div>
+  <label>Due date (turns red when overdue, orange today, yellow tomorrow)</label>
+  <div class="row" style="margin-top:0"><input type="date" id="nz"><button id="dt">Today</button><button id="dm">Tomorrow</button><button id="dx">Clear</button></div>
+  <label>Checklist (up to 3 items; you can tick them straight on the node)</label>
+  <div id="cks">
+    <div class="ckrow"><input type="checkbox" class="ckd"><input class="ckt" maxlength="24" placeholder="Checklist item 1"></div>
+    <div class="ckrow"><input type="checkbox" class="ckd"><input class="ckt" maxlength="24" placeholder="Checklist item 2"></div>
+    <div class="ckrow"><input type="checkbox" class="ckd"><input class="ckt" maxlength="24" placeholder="Checklist item 3"></div>
+  </div>
+  <label>Image (resized automatically)</label>
+  <div class="row" style="margin-top:0"><input type="file" id="ni" accept="image/*"><button id="nr">Remove</button></div>
+  <img id="np">
+</div></div>
+
+<script>
+const $=s=>document.querySelector(s);
+const COLORS=['#6c5ce7','#00b894','#e17055','#0984e3','#e84393','#d6a000','#636e72','#d63031','#00cec9','#8e44ad','#6ab04c','#2d3436'];
+const API_URL='PASTE_YOUR_/exec_URL_HERE';
+const run=async(fn,...a)=>{
+  const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({fn,args:a})});
+  const j=await r.json();
+  if(!j.ok)throw new Error(j.error);
+  return j.data;
+};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const cut=(s,n)=>s.length>n?s.slice(0,n-1)+'…':s;
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+let M=null,sel=null,view={x:40,y:100,k:1},hist=[],fut=[],timer=null,saving=false,isDirty=false,pickCols=[COLORS[0]],editId=null,editImg=null,editIr=1,freshId=null;
+let drag=null,ld=null,cand=null,dragStarted=false,rafId=0;
+const svg=$('#cv'),g=$('#g');
+
+const byId=id=>M.nodes.find(n=>n.id===id);
+const kids=id=>M.nodes.filter(n=>n.p===id);
+const root=()=>M.nodes.find(n=>!n.p);
+/* ---- tags: a node can carry several colours (n.cs); n.c is the primary one ---- */
+const DEF='#8d93a5'; // neutral colour of an untagged node (not one of the tag colours)
+const tcols=n=>n.cs?n.cs:(n.c&&n.c!==DEF?[n.c]:[]);
+const lab=c=>((M&&M.legend)||{})[c]||'';
+const tl=n=>tcols(n).filter(lab).length;
+const cnt=c=>M.nodes.filter(n=>tcols(n).includes(c)).length;
+/* ---- due dates & checklists ---- */
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const ymd=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const dayDiff=s=>{const[a,b,c]=s.split('-').map(Number),t=new Date();return Math.round((new Date(a,b-1,c)-new Date(t.getFullYear(),t.getMonth(),t.getDate()))/864e5)};
+const fmtD=s=>{const[,b,c]=s.split('-').map(Number);return c+' '+MON[b-1]};
+const ckAll=n=>!!(n.ck&&n.ck.length&&n.ck.every(x=>x.d));
+// od=overdue, td=today, tm=tomorrow, fu=future, done=all checklist items ticked
+const dueSt=n=>{if(!n.due)return null;if(ckAll(n))return'done';const d=dayDiff(n.due);return d<0?'od':d===0?'td':d===1?'tm':'fu'};
+const DUEC={od:'#d63031',td:'#e67e22',tm:'#f1c40f'};
+const cond=(n,f)=>f[0]==='!'?dueSt(n)===f.slice(1):tcols(n).includes(f);
+const hit=n=>{
+  if(!focus.size)return true;
+  const fs=[...focus];
+  return fmode==='all'?fs.every(f=>cond(n,f)):fs.some(f=>cond(n,f));
+};
+const ckW=n=>(n.ck||[]).reduce((m,c)=>Math.max(m,c.t.length*6.2+40),0);
+const grad=n=>{
+  const c=tcols(n),k=c.length;if(k<2)return'';
+  return `<linearGradient id="gr${n.id}" x1="0" y1="0" x2="1" y2="0">`+c.map((x,i)=>`<stop offset="${(i+.2)/k}" stop-color="${x}"/><stop offset="${(i+.8)/k}" stop-color="${x}"/>`).join('')+`</linearGradient>`;
+};
+const W=n=>Math.round(Math.min(190,Math.max(n.img?150:n.url?110:70,n.t.length*7.3+28,tl(n)?16+tl(n)*66:0,n.due?118:0,ckW(n))));
+const IH=(n,w)=>Math.min(110,(w-12)*n.ir);
+const H=(n,w=W(n))=>{const k=(n.ck||[]).length;return 38+(n.img?IH(n,w)+10:0)+(tl(n)?22:0)+(n.due?22:0)+k*18+(k?4:0)+(n.url?24:0)};
+const normUrl=s=>{if(!s)return'';try{const u=new URL(/^[a-z][a-z0-9+.-]*:/i.test(s)?s:'https://'+s);return/^https?:$/.test(u.protocol)?u.href:''}catch(e){return''}};
+const shortUrl=u=>{try{return new URL(u).hostname.replace(/^www\./,'')}catch(e){return u}};
+const toast=m=>{const t=$('#toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',3500)};
+const status=s=>{const e=$('#st');e.textContent='●';e.title=s;e.style.color=/Saved/.test(s)?'#00b894':/fail/i.test(s)?'#d63031':'#e1a100'};
+
+/* ---------- layout & drawing ---------- */
+function layout(){
+  const vis=[],D={},O={};
+  (function w(n,d,ox,oy){ox+=n.ox||0;oy+=n.oy||0;vis.push(n);D[n.id]=d;O[n.id]=[ox,oy];if(!n.col)kids(n.id).forEach(k=>w(k,d+1,ox,oy))})(root(),0,0,0);
+  const P={};
+  if(M.layout==='lane'){
+    const cols=[...M.lanes];
+    if(vis.some(n=>!cols.includes(n.lane)))cols.unshift('');
+    const idx=new Map(vis.map((n,i)=>[n.id,i]));
+    const groups=cols.map(()=>[]);
+    vis.forEach(n=>groups[Math.max(0,cols.indexOf(cols.includes(n.lane)?n.lane:''))].push(n));
+    groups.forEach((a,i)=>{
+      a.sort((p,q)=>(p.lo??1e6+idx.get(p.id))-(q.lo??1e6+idx.get(q.id)));
+      let y=0;a.forEach(n=>{const h=H(n,190);P[n.id]={x:i*230+20,y,w:190,h};y+=h+14});
+    });
+    if(drag&&P[drag.id]&&drag.wx!=null)P[drag.id]={...P[drag.id],x:drag.wx-95,y:drag.wy-19};
+    return {P,vis,cols,groups};
+  }
+  let r=0;const Y={};
+  (function f(n){const ks=n.col?[]:kids(n.id);if(!ks.length){Y[n.id]=r;r+=H(n)+16}else{ks.forEach(f);Y[n.id]=(Y[ks[0].id]+Y[ks[ks.length-1].id])/2}})(root());
+  const mw=[];vis.forEach(n=>{mw[D[n.id]]=Math.max(mw[D[n.id]]||0,W(n))});
+  const X=[0];mw.forEach((w,d)=>X[d+1]=X[d]+w+80);
+  vis.forEach(n=>P[n.id]={x:X[D[n.id]]+O[n.id][0],y:Y[n.id]+O[n.id][1],w:W(n),h:H(n)});
+  return {P,vis};
+}
+function edgeI(a,b,dy=0){
+  const ya=a.y+19,yb=b.y+19+dy;let x1,x2,d1,d2;
+  if(b.x>=a.x+a.w){x1=a.x+a.w;x2=b.x;d1=40;d2=-40}
+  else if(b.x+b.w<=a.x){x1=a.x;x2=b.x+b.w;d1=-40;d2=40}
+  else{x1=a.x+a.w;x2=b.x+b.w;d1=40;d2=40}
+  return {d:`M${x1} ${ya}C${x1+d1} ${ya} ${x2+d2} ${yb} ${x2} ${yb}`,x:x2,y:yb,sx:x1,sy:ya,dir:d2<0?1:-1,mx:(4*x1+3*d1+3*d2+4*x2)/8,my:(ya+yb)/2};
+}
+function edge(a,b){return edgeI(a,b).d}
+// small tag badges (colour dot + meaning + ✕) printed on the node; tap one to remove that tag
+function badges(n,p){
+  const cs=tcols(n).filter(lab);if(!cs.length)return'';
+  const by=p.y+36+(n.img?IH(n,p.w)+10:0),avail=p.w-16,gap=4;
+  const per=(avail-gap*(cs.length-1))/cs.length,mc=Math.max(1,Math.floor((per-30)/5.6));
+  let s='';
+  cs.forEach((c,i)=>{
+    const x=p.x+8+i*(per+gap);
+    s+=`<g data-untag="${n.id}:${c}"><rect x="${x}" y="${by-3}" width="${per}" height="22" fill="#000" fill-opacity="0"/><rect x="${x}" y="${by}" width="${per}" height="16" rx="8" fill="#fff" opacity=".95"/><circle cx="${x+8}" cy="${by+8}" r="4.5" fill="${c}"/><text x="${x+16}" y="${by+12}" font-size="10" fill="#333" font-family="system-ui,sans-serif">${esc(cut(lab(c),mc))}</text><text x="${x+per-9}" y="${by+12}" text-anchor="middle" font-size="11" font-weight="700" fill="#888" font-family="system-ui,sans-serif">✕</text></g>`;
+  });
+  return s;
+}
+// due-date pill under the tag badges
+function dueBadge(n,p){
+  const st=dueSt(n);if(!st)return'';
+  const y=p.y+36+(n.img?IH(n,p.w)+10:0)+(tl(n)?22:0),d=dayDiff(n.due);
+  const T={od:'Overdue '+(-d)+'d',td:'Due today',tm:'Due tomorrow',fu:'Due '+fmtD(n.due),done:'✓ Done · '+fmtD(n.due)}[st];
+  const F={od:['#d63031','#fff'],td:['#e67e22','#fff'],tm:['#f1c40f','#3b3200'],fu:['#fff','#333'],done:['#00b894','#fff']}[st];
+  return `<rect x="${p.x+8}" y="${y}" width="${p.w-16}" height="16" rx="8" fill="${F[0]}" stroke="#fff" stroke-width="1.5"/><text x="${p.x+p.w/2}" y="${y+12}" text-anchor="middle" font-size="10.5" font-weight="700" fill="${F[1]}" font-family="system-ui,sans-serif">${esc(cut(T,Math.floor((p.w-22)/6)))}</text>`;
+}
+// up to 3 tick-able checklist rows
+function checks(n,p){
+  const a=n.ck||[];if(!a.length)return'';
+  const y=p.y+36+(n.img?IH(n,p.w)+10:0)+(tl(n)?22:0)+(n.due?22:0);
+  const ts=tcols(n).length>1?' stroke="rgba(0,0,0,.38)" stroke-width="3" paint-order="stroke" stroke-linejoin="round"':'';
+  let s='';
+  a.forEach((c,i)=>{
+    const yy=y+i*18;
+    s+=`<g data-ck="${n.id}:${i}"><rect x="${p.x+4}" y="${yy}" width="${p.w-8}" height="18" fill="#000" fill-opacity="0"/><rect x="${p.x+10}" y="${yy+3}" width="12" height="12" rx="3" fill="${c.d?'#fff':'none'}" stroke="#fff" stroke-width="1.5"/>`;
+    if(c.d)s+=`<path d="M${p.x+12.5} ${yy+9.5}l2.5 2.5 4.5-5.5" fill="none" stroke="#222" stroke-width="2"/>`;
+    s+=`<text x="${p.x+28}" y="${yy+13}" font-size="11" fill="#fff"${c.d?' opacity=".7" text-decoration="line-through"':''}${ts} font-family="system-ui,sans-serif">${esc(cut(c.t,Math.floor((p.w-36)/6)))}</text></g>`;
+  });
+  return s;
+}
+// coloured ring around nodes that are overdue / due today / due tomorrow
+function outline(n,p,rx){
+  const st=dueSt(n);if(!DUEC[st])return'';
+  const c=DUEC[st],w=st==='tm'?2:3.5;
+  const r=`x="${p.x-3}" y="${p.y-3}" width="${p.w+6}" height="${p.h+6}" rx="${rx+3}" fill="none"`;
+  return `<rect ${r} stroke="#fff" stroke-width="${w+3}"/><rect ${r} stroke="${c}" stroke-width="${w}"/>`;
+}
+function draw(ui){
+  const {P,vis,cols}=layout();let s='';
+  const tg=ui&&drag&&dragStarted?dropTarget({P,vis}):null;
+  const b={x1:1e9,y1:1e9,x2:-1e9,y2:-1e9};
+  const ext=(x,y,w,h)=>{b.x1=Math.min(b.x1,x);b.y1=Math.min(b.y1,y);b.x2=Math.max(b.x2,x+w);b.y2=Math.max(b.y2,y+h)};
+  if(cols){
+    const off=cols[0]===''?1:0,F='font-family="system-ui,sans-serif"';
+    if(ld&&ld.wx!=null){const ti=clamp(Math.floor((ld.wx-10)/230)-off,0,M.lanes.length-1);s+=`<rect x="${(ti+off)*230+16}" y="-40" width="198" height="34" rx="10" fill="none" stroke="#6c5ce7" stroke-width="2" stroke-dasharray="5 4"/>`}
+    cols.forEach((c,i)=>{
+      const li=i-off,dr=ld&&ld.i===li&&c!=='';let x=i*230+20;if(dr&&ld.wx!=null)x=ld.wx-95;
+      s+=`<g ${c!==''&&ui?`data-lane="${li}"`:''} opacity="${dr?.6:1}"><rect x="${x}" y="-36" width="190" height="26" rx="8" fill="#8a90a2" opacity=".2"/><text x="${x+10}" y="-18" font-size="12" font-weight="700" fill="#6b7186" ${F}>${esc(cut(c||'Unsorted',24))}</text></g>`;
+      ext(x,-36,190,26);
+    });
+  }
+  let ls='',lk=0;            // ls: line notes (drawn on top of nodes); lk: fans loop-backs apart
+  const S=ui?sel:null;       // selected node: its lines light up, the rest fade
+  const lineNote=(n,pid,G,col,dim,back)=>{
+    const t=n.el&&n.el[pid];if(!t&&!back)return;
+    const op=dim?' opacity=".25"':'',F='font-family="system-ui,sans-serif"';
+    if(!t){ls+=`<g data-edge="${n.id}:${pid}"${op}><circle cx="${G.mx}" cy="${G.my}" r="10" fill="#fff3a8" stroke="${col}" stroke-width="1.6"/><text x="${G.mx}" y="${G.my+4.5}" text-anchor="middle" font-size="13" fill="#3b3200" ${F}>↺</text></g>`;return}
+    const txt=(back?'↺ ':'')+cut(t,26),w=Math.max(30,txt.length*6.1+18);
+    ls+=`<g data-edge="${n.id}:${pid}"${op}><rect x="${G.mx-w/2}" y="${G.my-10}" width="${w}" height="20" rx="10" fill="#fff3a8" stroke="${col}" stroke-width="1.6"/><text x="${G.mx}" y="${G.my+4}" text-anchor="middle" font-size="11" fill="#3b3200" ${F}>${esc(txt)}</text></g>`;
+  };
+  vis.forEach(n=>{
+    const list=srcs(n).filter(id=>P[id]&&byId(id));
+    list.forEach((pid,i)=>{
+      const src=byId(pid),isTree=pid===n.p,a=P[pid],b=P[n.id],col=src.c;
+      const off=list.length>1?clamp((i-(list.length-1)/2)*7,-14,14):0;   // spread arrivals so arrows don't stack
+      const back=!isTree&&b.x+b.w<=a.x;                                   // goes back to an earlier column = a loop
+      let G;
+      if(back){
+        const dr=36+(lk++%4)*14,sx=a.x+a.w/2,sy=a.y+a.h,tx=b.x+b.w/2+off*1.3,ty=b.y+b.h;
+        G={d:`M${sx} ${sy}C${sx} ${sy+dr} ${tx} ${ty+dr} ${tx} ${ty}`,sx,sy,x:tx,y:ty,up:true,mx:(sx+tx)/2,my:(sy+ty)/2+.75*dr};
+      }else G=edgeI(a,b,off);
+      const touch=S&&(pid===S||n.id===S);
+      const dim=focus.size&&!(isTree?hit(n):(hit(n)||hit(src)));
+      const op=dim?.12:S&&!touch?.3:touch?1:isTree?.7:.85;
+      s+=`<path d="${G.d}" fill="none" stroke="${col}" stroke-width="${touch?3.5:2.5}"${isTree?'':' stroke-dasharray="7 5"'} opacity="${op}"/>`;
+      s+=`<circle cx="${G.sx}" cy="${G.sy}" r="3.5" fill="${col}" opacity="${op}"/>`;                       // ● where the line starts
+      s+=(G.up?`<path d="M${G.x} ${G.y}l-6 10l12 0z"`:`<path d="M${G.x} ${G.y}l${-10*G.dir} -6l0 12z"`)+` fill="${col}" opacity="${op}"/>`;   // ▶ where it ends
+      if(touch&&ui)s+=`<path class="flow" pointer-events="none" d="${G.d}" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-dasharray="1 13"/>`;
+      if(ui)s+=`<path data-edge="${n.id}:${pid}" d="${G.d}" fill="none" stroke="#000" stroke-opacity="0" stroke-width="18"/>`;
+      lineNote(n,pid,G,col,dim,back);
+    });
+  });
+  vis.forEach(n=>{
+    const p=P[n.id],ch=kids(n.id).length,rx=n.img?16:19,dim=focus.size&&!hit(n),multi=tcols(n).length>1;ext(p.x,p.y,p.w+(ch?24:0),p.h);
+    s+=`<g data-id="${n.id}"${dim?' opacity=".25"':''}>`;
+    if(multi)s+=grad(n);
+    if(tg&&tg.id===n.id)s+=`<rect x="${p.x-6}" y="${p.y-6}" width="${p.w+12}" height="${p.h+12}" rx="${rx+6}" fill="#00b894" fill-opacity=".15" stroke="#00b894" stroke-width="3"/>`;
+    if(ui&&n.id===sel)s+=`<rect x="${p.x-5}" y="${p.y-5}" width="${p.w+10}" height="${p.h+10}" rx="${rx+5}" fill="none" stroke="${n.c}" stroke-width="2" stroke-dasharray="4 3"/>`;
+    if(ui&&n.id===linkTo)s+=`<rect x="${p.x-7}" y="${p.y-7}" width="${p.w+14}" height="${p.h+14}" rx="${rx+7}" fill="#00b894" fill-opacity=".12" stroke="#00b894" stroke-width="3" stroke-dasharray="6 4"/>`;
+    s+=outline(n,p,rx);
+    s+=`<rect x="${p.x}" y="${p.y}" width="${p.w}" height="${p.h}" rx="${rx}" fill="${multi?`url(#gr${n.id})`:n.c}"/>
+    <text x="${p.x+p.w/2}" y="${p.y+24}" text-anchor="middle" font-size="13" fill="#fff"${multi?' stroke="rgba(0,0,0,.38)" stroke-width="3" paint-order="stroke" stroke-linejoin="round"':''} font-family="system-ui,sans-serif">${esc(cut(n.t,Math.floor((p.w-22)/7.3)))}</text>`;
+    if(n.img){
+      const ih=IH(n,p.w),iw=ih/n.ir,ix=p.x+p.w/2-iw/2,iy=p.y+42;
+      s+=`<clipPath id="k${n.id}"><rect x="${ix}" y="${iy}" width="${iw}" height="${ih}" rx="8"/></clipPath><image data-img="1" href="${n.img}" x="${ix}" y="${iy}" width="${iw}" height="${ih}" clip-path="url(#k${n.id})"/>`;
+      if(ui&&n.id===sel)s+=`<g data-delimg="${n.id}"><circle cx="${ix+iw-9}" cy="${iy+9}" r="10" fill="#000" opacity=".6"/><text x="${ix+iw-9}" y="${iy+13}" text-anchor="middle" font-size="12" fill="#fff" font-family="system-ui,sans-serif">✕</text></g>`;
+    }
+    s+=badges(n,p)+dueBadge(n,p)+checks(n,p);
+    if(n.notes)s+=`<g data-notes="${n.id}"><circle cx="${p.x+p.w-10}" cy="${p.y+8}" r="12" fill="#000" fill-opacity="0"/><circle cx="${p.x+p.w-10}" cy="${p.y+8}" r="3.5" fill="#fff" opacity=".8"/></g>`;
+    s+=`</g>`;
+    if(n.url){const ly=p.y+p.h-24;s+=`<g data-link="${n.id}"${dim?' opacity=".25"':''}><rect x="${p.x+8}" y="${ly}" width="${p.w-16}" height="18" rx="9" fill="#fff" opacity=".92"/><text x="${p.x+p.w/2}" y="${ly+13}" text-anchor="middle" font-size="11" fill="${n.c}" font-family="system-ui,sans-serif">${esc(cut(shortUrl(n.url),Math.floor((p.w-44)/6.2)))} ↗</text></g>`}
+    if(ui&&n.id===sel){const bx=p.x+p.w+12,by=p.y+19+(ch?27:0);s+=`<g data-add="${n.id}"><circle cx="${bx}" cy="${by}" r="11" fill="#6c5ce7"/><text x="${bx}" y="${by+6}" text-anchor="middle" font-size="18" font-weight="700" fill="#fff" font-family="system-ui,sans-serif">+</text></g>`}
+    if(ch)s+=`<g data-tog="${n.id}"${dim?' opacity=".25"':''}><circle cx="${p.x+p.w+12}" cy="${p.y+19}" r="11" fill="#fff" stroke="${n.c}" stroke-width="2"/><text x="${p.x+p.w+12}" y="${p.y+23}" text-anchor="middle" font-size="11" font-weight="700" fill="${n.c}" font-family="system-ui,sans-serif">${n.col?ch:'−'}</text></g>`;
+  });
+  s+=ls;
+  return {s,b};
+}
+function redraw(){if(rafId)return;rafId=requestAnimationFrame(()=>{rafId=0;g.innerHTML=draw(true).s})}
+function render(){
+  if(linkTo&&!byId(linkTo))linkTo=null;
+  if(qn&&!byId(qn.id))closeQN();
+  g.innerHTML=draw(true).s;apply();
+  const n=sel&&byId(sel);
+  $('#bar').classList.toggle('show',!!n);
+  $('#bs').disabled=!n||!n.p;$('#bx').disabled=!n||!n.p;
+  $('#lay').textContent=M.layout==='lane'?'Lanes':'Free';
+  $('#bl').style.display=M.layout==='lane'?'':'none';
+  $('#un').disabled=!hist.length;$('#re').disabled=!fut.length;
+  $('#title').textContent=M.name;
+  $('#bk').textContent=linkTo?'✓ Done':'🔗';$('#bk').classList.toggle('pri',!!linkTo);
+  drawLegend();
+}
+function apply(){g.setAttribute('transform',`translate(${view.x} ${view.y}) scale(${view.k})`)}
+function fit(){
+  const {b}=draw(false),r=svg.getBoundingClientRect(),pad=30;
+  const k=Math.min(1,(r.width-pad*2)/(b.x2-b.x1),(r.height-pad*2-60)/(b.y2-b.y1));
+  view.k=k;view.x=pad-b.x1*k+(r.width-pad*2-(b.x2-b.x1)*k)/2;view.y=pad-b.y1*k+10;apply();
+}
+
+/* ---------- pan / zoom / drag / tap ---------- */
+const ptr=new Map();let down=null,moved=0,last=0;
+const world=e=>{const r=svg.getBoundingClientRect();return[(e.clientX-r.left-view.x)/view.k,(e.clientY-r.top-view.y)/view.k]};
+function zoomAt(cx,cy,f){
+  const r=svg.getBoundingClientRect();cx-=r.left;cy-=r.top;
+  const nk=clamp(view.k*f,.2,3);
+  view.x=cx-(cx-view.x)*nk/view.k;view.y=cy-(cy-view.y)*nk/view.k;view.k=nk;
+}
+const dist=()=>{const[a,b]=[...ptr.values()];return Math.hypot(a.x-b.x,a.y-b.y)};
+svg.onpointerdown=e=>{
+  if(qn&&!qn.dock)closeQN();
+  svg.setPointerCapture(e.pointerId);ptr.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(ptr.size===1){
+    down=e.target;moved=0;dragStarted=false;drag=null;ld=null;
+    const nd=e.target.closest('[data-id]'),lh=e.target.closest('[data-lane]');
+    cand=nd?{id:nd.dataset.id}:lh?{lane:+lh.dataset.lane}:null;
+  }else{moved=99;cand=null;if(ptr.size===2)last=dist()}
+};
+svg.onpointermove=e=>{
+  const p=ptr.get(e.pointerId);if(!p)return;
+  const dx=e.clientX-p.x,dy=e.clientY-p.y;p.x=e.clientX;p.y=e.clientY;
+  if(ptr.size===1){
+    moved+=Math.abs(dx)+Math.abs(dy);
+    if(cand&&!dragStarted&&moved>6){
+      dragStarted=true;hist.push(snap());if(hist.length>30)hist.shift();fut=[];
+      const[wx,wy]=world(e);
+      if(cand.id){sel=cand.id;drag={id:cand.id,wx,wy}}
+      else ld={i:cand.lane,wx};
+    }
+    if(dragStarted){
+      const[wx,wy]=world(e);
+      if(drag){
+        drag.wx=wx;drag.wy=wy;
+        if(M.layout!=='lane'){const n=byId(drag.id);n.ox=(n.ox||0)+dx/view.k;n.oy=(n.oy||0)+dy/view.k}
+      }else if(ld)ld.wx=wx;
+      redraw();return;
+    }
+    if(!cand){view.x+=dx;view.y+=dy;apply()}
+  }else if(ptr.size===2){
+    const[a,b]=[...ptr.values()],d=dist();zoomAt((a.x+b.x)/2,(a.y+b.y)/2,d/last);last=d;apply();
+  }
+};
+svg.onpointerup=svg.onpointercancel=e=>{
+  if(!ptr.has(e.pointerId))return;ptr.delete(e.pointerId);
+  if(ptr.size)return;
+  if(dragStarted){
+    if(drag){
+      const tg=dropTarget(layout());
+      if(tg)reparent(drag.id,tg.id);else if(M.layout==='lane')dropNode();
+    }else if(ld)dropLane();
+    drag=null;ld=null;dragStarted=false;touch();render();
+  }else if(moved<6&&down)tap(down);
+};
+svg.onwheel=e=>{e.preventDefault();zoomAt(e.clientX,e.clientY,e.deltaY<0?1.1:.9);apply()};
+let lastTap={},focus=new Set(),fmode='any';
+
+/* ---------- tag chips (filter, collapse, drag-to-tag) & tag editor ---------- */
+let lgOpen=true,lgSkip=false;try{lgOpen=localStorage.getItem('mm_lg')!=='0'}catch(e){}
+function drawLegend(){
+  const ent=COLORS.filter(lab);
+  [...focus].forEach(c=>{if(c[0]!=='!'&&!lab(c))focus.delete(c)});
+  const dc=[['od','Overdue'],['td','Due today'],['tm','Due tomorrow']].map(([k,l])=>[k,l,M.nodes.filter(n=>dueSt(n)===k).length]).filter(x=>x[2]||focus.has('!'+x[0]));
+  const e=$('#lg');
+  let h=`<span data-toggle="1" title="Show / hide tags">🏷 ${lgOpen?'▾ Hide':'▸'}${!lgOpen&&focus.size?' · '+focus.size+' filter'+(focus.size>1?'s':''):''}</span>`;
+  if(lgOpen){
+    h+=ent.map(c=>`<span data-c="${c}" class="${focus.has(c)?'on':''}"><i style="background:${c}"></i>${esc(lab(c))} (${cnt(c)})</span>`).join('');
+    h+=dc.map(([k,l,c])=>`<span data-c="!${k}" class="${focus.has('!'+k)?'on':''}"><i style="background:${DUEC[k]}"></i>${l} (${c})</span>`).join('');
+    if(focus.size>1)h+=`<span data-mode="1" title="Tap to switch between ANY and ALL">Match: ${fmode==='all'?'ALL':'ANY'}</span>`;
+  }
+  if(focus.size)h+=`<span data-clear="1">✕ Clear</span>`;
+  e.innerHTML=h;
+  e.style.display=(ent.length||dc.length)?'flex':'none';
+  e.style.bottom=(sel?64:8)+'px';
+}
+$('#lg').onclick=e=>{
+  if(lgSkip){lgSkip=false;return}
+  const s=e.target.closest('span');if(!s)return;
+  if(s.dataset.toggle){lgOpen=!lgOpen;try{localStorage.setItem('mm_lg',lgOpen?'1':'0')}catch(x){}}
+  else if(s.dataset.clear)focus.clear();
+  else if(s.dataset.mode)fmode=fmode==='all'?'any':'all';
+  else if(s.dataset.c){const c=s.dataset.c;if(focus.has(c))focus.delete(c);else focus.add(c)}
+  render();
+};
+
+/* ---- drag a legend chip onto a node to tag it ---- */
+let cd=null,ghost=null,dropEl=null;
+const nodeAt=(x,y)=>{const el=document.elementFromPoint(x,y);return el&&el.closest?el.closest('#cv [data-id]'):null};
+function tagNode(n,c){
+  if(tcols(n).includes(c)){toast('Already tagged “'+lab(c)+'”');return}
+  mut(()=>{n.cs=[...tcols(n).filter(lab),c];n.c=n.cs[0]});
+  toast('Tagged “'+cut(n.t,18)+'” · '+lab(c));
+}
+$('#lg').addEventListener('pointerdown',e=>{
+  const s=e.target.closest('span[data-c]');
+  if(!s||s.dataset.c[0]==='!')return;
+  cd={c:s.dataset.c,x:e.clientX,y:e.clientY,on:false,id:e.pointerId};
+});
+document.addEventListener('pointermove',e=>{
+  if(!cd||e.pointerId!==cd.id)return;
+  if(!cd.on){
+    if(Math.hypot(e.clientX-cd.x,e.clientY-cd.y)<8)return;
+    cd.on=true;ghost=document.createElement('div');
+    ghost.style.cssText='position:fixed;z-index:20;pointer-events:none;padding:5px 11px;border-radius:14px;color:#fff;font-size:12px;font-weight:700;box-shadow:0 4px 14px #0006;transform:translate(-50%,-140%);background:'+cd.c;
+    ghost.textContent=lab(cd.c);document.body.appendChild(ghost);
+  }
+  ghost.style.left=e.clientX+'px';ghost.style.top=e.clientY+'px';
+  const t=nodeAt(e.clientX,e.clientY);
+  if(t!==dropEl){if(dropEl)dropEl.style.filter='';dropEl=t;if(t)t.style.filter='drop-shadow(0 0 8px #00b894)'}
+});
+const endChip=e=>{
+  if(!cd||e.pointerId!==cd.id)return;
+  const was=cd.on,c=cd.c,t=dropEl;
+  cd=null;dropEl=null;
+  if(ghost){ghost.remove();ghost=null}
+  if(t)t.style.filter='';
+  if(!was)return;
+  lgSkip=true;setTimeout(()=>lgSkip=false,60);   // swallow the click that follows a drag
+  if(e.type==='pointerup'&&t){const n=byId(t.dataset.id);if(n)tagNode(n,c)}
+};
+document.addEventListener('pointerup',endChip);
+document.addEventListener('pointercancel',endChip);
+
+function openLegend(){
+  $('#legRows').innerHTML=COLORS.map(c=>`<div class="map"><i class="dot" style="background:${c}"></i><input data-c="${c}" maxlength="24" placeholder="Meaning, e.g. Urgent" value="${esc(lab(c))}"><span class="cnt">${cnt(c)} node${cnt(c)===1?'':'s'}</span></div>`).join('');
+  $('#legRows').querySelectorAll('input').forEach(el=>el.onchange=()=>{
+    const v=el.value.trim(),c=el.dataset.c;
+    mut(()=>{M.legend=M.legend||{};if(v)M.legend[c]=v;else delete M.legend[c]});
+  });
+  $('#legSheet').classList.add('show');
+}
+$('#bt').onclick=openLegend;
+$('#editTags').onclick=openLegend;
+$('#legx').onclick=()=>{$('#legSheet').classList.remove('show');if($('#nodeSheet').classList.contains('show'))drawSw()};
+function openImg(id){const n=byId(id);if(!n||!n.img)return;$('#lbi').src=n.img;$('#lb').classList.add('show')}
+$('#lb').onclick=()=>{$('#lb').classList.remove('show');$('#lbi').removeAttribute('src')};
+// remove one tag (colour) from a node straight from the map; ↶ undoes it
+function untag(id,c){
+  const n=byId(id);if(!n)return;
+  mut(()=>{
+    const cs=tcols(n).filter(x=>x!==c&&lab(x));
+    n.cs=cs;n.c=cs[0]||DEF;   // no tags left → back to the neutral colour
+  });
+  toast('Removed “'+lab(c)+'” · ↶ to undo');
+}
+function tap(t){
+  if(qn&&qn.dock&&!t.closest('[data-notes]'))closeQN();
+  if(linkTo){                                   // merge mode: tap nodes that flow into the highlighted node
+    const nd=t.closest('[data-id]');
+    if(nd){linkTap(nd.dataset.id);return}
+    linkTo=null;render();toast('Merge mode off');return;
+  }
+  if(t.closest('[data-lane]')){openLanes();return}
+  let x;
+  if(x=t.closest('[data-add]')){sel=x.dataset.add;addNode(sel);return}
+  if(x=t.closest('[data-delimg]')){if(confirm('Remove this image?')){const m=byId(x.dataset.delimg);mut(()=>{delete m.img;delete m.ir})}return}
+  if(x=t.closest('[data-link]')){const m=byId(x.dataset.link);if(m&&m.url)window.open(m.url,'_blank','noopener');return}
+  if(x=t.closest('[data-edge]')){const v=x.dataset.edge,k=v.indexOf(':');openEdge(v.slice(0,k),v.slice(k+1));return}
+  if(x=t.closest('[data-notes]')){sel=x.dataset.notes;render();openQN(sel,true);return}
+  if(x=t.closest('[data-untag]')){const v=x.dataset.untag,k=v.indexOf(':');untag(v.slice(0,k),v.slice(k+1));return}
+  if(x=t.closest('[data-ck]')){
+    const v=x.dataset.ck,k=v.lastIndexOf(':'),m=byId(v.slice(0,k)),i=+v.slice(k+1);
+    if(m&&m.ck&&m.ck[i])mut(()=>{m.ck[i].d=!m.ck[i].d});
+    return;
+  }
+  const tg=t.closest('[data-tog]');
+  if(tg){mut(()=>{const n=byId(tg.dataset.tog);n.col=!n.col});return}
+  const n=t.closest('[data-id]');
+  if(n){
+    const now=Date.now(),id=n.dataset.id;
+    if(lastTap.id===id&&now-lastTap.t<400){lastTap={};sel=id;render();openNode(id);return}
+    if(sel===id&&t.closest('[data-img]')){lastTap={};openImg(id);return}
+    lastTap={id,t:now};
+  }else lastTap={};
+  sel=n?n.dataset.id:null;render();
+}
+// Node under the pointer (not the dragged node or its own branch) = new parent
+const inBox=(p,x,y)=>x>=p.x-6&&x<=p.x+p.w+6&&y>=p.y-6&&y<=p.y+p.h+6;
+function dropTarget(L){
+  if(!drag||drag.wx==null||!byId(drag.id)||!byId(drag.id).p)return null;
+  const ex=new Set();(function w(id){ex.add(id);kids(id).forEach(k=>w(k.id))})(drag.id);
+  return L.vis.find(x=>!ex.has(x.id)&&inBox(L.P[x.id],drag.wx,drag.wy))||null;
+}
+function reparent(id,pid){
+  const n=byId(id),t=byId(pid);
+  if(n.p!==pid)toast('Moved under “'+cut(t.t,22)+'”');
+  n.p=pid;n.ox=0;n.oy=0;t.col=false;sel=id;
+  if(n.ps){n.ps=n.ps.filter(i=>i!==pid);if(!n.ps.length)delete n.ps}
+  cleanEl(n);
+}
+// Lane view: drop a node into a column at the pointer's row position
+function dropNode(){
+  const L=layout(),n=byId(drag.id);
+  const ci=clamp(Math.floor((drag.wx-10)/230),0,L.cols.length-1);
+  const others=L.groups[ci].filter(x=>x.id!==n.id);
+  const k=others.filter(x=>L.P[x.id].y+L.P[x.id].h/2<drag.wy).length;
+  others.splice(k,0,n);
+  n.lane=L.cols[ci];others.forEach((x,i)=>x.lo=i);
+}
+// Lane view: drop a lane header into a new slot
+function dropLane(){
+  if(ld.wx==null)return;
+  const off=layout().cols[0]===''?1:0;
+  const ti=clamp(Math.floor((ld.wx-10)/230)-off,0,M.lanes.length-1);
+  const[name]=M.lanes.splice(ld.i,1);M.lanes.splice(ti,0,name);
+}
+
+/* ---------- edits, undo, autosave ---------- */
+const snap=()=>JSON.stringify({nodes:M.nodes,lanes:M.lanes,legend:M.legend});
+function mut(fn){hist.push(snap());if(hist.length>30)hist.shift();fut=[];fn();touch();render()}
+function restore(s){const o=JSON.parse(s);M.nodes=o.nodes;M.lanes=o.lanes;M.legend=o.legend||{};if(sel&&!byId(sel))sel=null;touch();render()}
+$('#un').onclick=()=>{if(hist.length){fut.push(snap());restore(hist.pop())}};
+$('#re').onclick=()=>{if(fut.length){hist.push(snap());restore(fut.pop())}};
+function touch(){isDirty=true;status('Unsaved…');clearTimeout(timer);timer=setTimeout(save,2000)}
+async function save(){
+  if(!M||!isDirty)return;if(saving){touch();return}
+  saving=true;clearTimeout(timer);status('Saving…');
+  try{
+    const data=JSON.parse(JSON.stringify(M));
+    let r=await run('saveMap',M.id,data,M.version);
+    if(r.conflict){
+      if(confirm('This map changed on another device.\nOK = overwrite with my version\nCancel = load the latest')){r=await run('saveMap',M.id,data,r.version)}
+      else{isDirty=false;saving=false;await openMap(M.id);return}
+    }
+    M.version=r.version;isDirty=false;status('Saved');
+  }catch(e){status('Save failed — retrying');setTimeout(touch,5000)}
+  saving=false;
+}
+let dayKey=ymd(new Date());
+document.addEventListener('visibilitychange',()=>{if(document.hidden)save();else if(M){dayKey=ymd(new Date());render()}});
+// re-evaluate overdue / today / tomorrow when the date rolls over
+setInterval(()=>{const k=ymd(new Date());if(M&&k!==dayKey&&!dragStarted){dayKey=k;render()}},60000);
+
+const nid=()=>'n'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+function addNode(parent){
+  const p=byId(parent);
+  const n={id:nid(),p:parent,t:'New idea',c:DEF,cs:[],lane:p.lane||'',notes:'',col:false};
+  mut(()=>{p.col=false;M.nodes.push(n)});sel=n.id;freshId=n.id;render();openNode(n.id);
+}
+$('#bc').onclick=()=>sel&&addNode(sel);
+$('#bs').onclick=()=>{const n=byId(sel);if(n&&n.p)addNode(n.p)};
+$('#bd').onclick=()=>sel&&openNode(sel);
+$('#bx').onclick=()=>{
+  const n=byId(sel);if(!n||!n.p||!confirm('Delete "'+n.t+'" and everything under it?'))return;
+  const del=new Set();(function w(id){del.add(id);kids(id).forEach(k=>w(k.id))})(n.id);
+  mut(()=>{M.nodes=M.nodes.filter(x=>!del.has(x.id));M.nodes.forEach(x=>{if(x.ps){x.ps=x.ps.filter(i=>!del.has(i));if(!x.ps.length)delete x.ps}cleanEl(x)})});sel=null;render();
+};
+$('#lay').onclick=()=>{M.layout=M.layout==='lane'?'free':'lane';touch();render();fit()};
+$('#bl').onclick=openLanes;
+
+/* ---------- lanes sheet ---------- */
+function openLanes(){drawLanes();$('#laneSheet').classList.add('show')}
+function drawLanes(){
+  $('#lanes').innerHTML=M.lanes.map((l,i)=>`<div class="map"><input data-r="${i}" value="${esc(l)}"><button data-u="${i}">↑</button><button data-d="${i}">↓</button><button data-x="${i}">✕</button></div>`).join('')||'<p style="color:var(--mut)">No lanes yet</p>';
+  const L=$('#lanes');
+  L.querySelectorAll('[data-r]').forEach(el=>el.onchange=()=>{
+    const i=+el.dataset.r,old=M.lanes[i],v=el.value.trim();
+    if(!v||(v!==old&&M.lanes.includes(v))){el.value=old;return}
+    mut(()=>{M.nodes.forEach(n=>{if(n.lane===old)n.lane=v});M.lanes[i]=v});
+  });
+  L.querySelectorAll('[data-u]').forEach(el=>el.onclick=()=>{const i=+el.dataset.u;if(i>0){mut(()=>{[M.lanes[i-1],M.lanes[i]]=[M.lanes[i],M.lanes[i-1]]});drawLanes()}});
+  L.querySelectorAll('[data-d]').forEach(el=>el.onclick=()=>{const i=+el.dataset.d;if(i<M.lanes.length-1){mut(()=>{[M.lanes[i+1],M.lanes[i]]=[M.lanes[i],M.lanes[i+1]]});drawLanes()}});
+  L.querySelectorAll('[data-x]').forEach(el=>el.onclick=()=>{
+    const i=+el.dataset.x,old=M.lanes[i];
+    if(!confirm('Delete lane "'+old+'"? Its nodes move to Unsorted.'))return;
+    mut(()=>{M.nodes.forEach(n=>{if(n.lane===old)n.lane=''});M.lanes.splice(i,1)});drawLanes();
+  });
+}
+$('#addlane').onclick=()=>{
+  const v=$('#newlane').value.trim();if(!v||M.lanes.includes(v))return;
+  mut(()=>M.lanes.push(v));$('#newlane').value='';drawLanes();
+};
+$('#lc').onclick=()=>{$('#laneSheet').classList.remove('show');fit()};
+
+/* ---------- quick notes popover: hover on desktop, 📝 button / notes dot on touch ---------- */
+let qn=null,qhT=0,qsT=0;
+const qe=$('#qn'),qt=$('#qnt'),canHover=matchMedia('(hover:hover)').matches;
+function nodeRect(id){
+  const p=layout().P[id];if(!p)return null;
+  const r=svg.getBoundingClientRect();
+  return {l:r.left+view.x+p.x*view.k,t:r.top+view.y+p.y*view.k,b:r.top+view.y+(p.y+p.h)*view.k};
+}
+function openQN(id,dock){
+  const n=byId(id);if(!n)return;
+  if(qn&&qn.id!==id)closeQN();
+  clearTimeout(qhT);clearTimeout(qsT);
+  qn={id,dock,snapped:false,dirty:false};
+  $('#qnh').textContent=n.t;qt.value=n.notes||'';
+  qe.classList.toggle('dock',dock);qe.classList.add('show');
+  qe.style.left='';qe.style.top='';
+  if(!dock){
+    const rc=nodeRect(id);
+    if(rc){
+      const w=qe.offsetWidth,h=qe.offsetHeight;
+      let y=rc.b+8;if(y+h>innerHeight-8)y=Math.max(8,rc.t-h-8);
+      qe.style.left=clamp(rc.l,8,innerWidth-w-8)+'px';qe.style.top=y+'px';
+    }
+  }
+}
+function closeQN(){
+  clearTimeout(qhT);clearTimeout(qsT);
+  if(!qn)return;
+  const d=qn.dirty;qn=null;qe.classList.remove('show');qt.blur();
+  if(d)render();                       // refresh the notes dot on the node
+}
+function qHideSoon(){clearTimeout(qhT);qhT=setTimeout(()=>{if(qn&&!qn.dock&&document.activeElement!==qt&&!qe.matches(':hover'))closeQN()},250)}
+qt.addEventListener('input',()=>{
+  if(!qn)return;const n=byId(qn.id);if(!n)return;
+  if(!qn.snapped){hist.push(snap());if(hist.length>30)hist.shift();fut=[];qn.snapped=true;$('#un').disabled=false}
+  n.notes=qt.value;qn.dirty=true;touch();
+});
+qt.addEventListener('blur',()=>{if(qn&&!qn.dock)qHideSoon()});
+qe.addEventListener('mouseenter',()=>clearTimeout(qhT));
+qe.addEventListener('mouseleave',()=>{if(qn&&!qn.dock)qHideSoon()});
+$('#qnx').onclick=closeQN;
+$('#qnd').onclick=()=>{if(!qn)return;const id=qn.id;closeQN();sel=id;render();openNode(id)};
+$('#bn').onclick=()=>{if(sel)openQN(sel,true)};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&qn)closeQN()});
+svg.addEventListener('mouseover',e=>{
+  if(!canHover||dragStarted||drag||ptr.size)return;
+  const t=e.target.closest&&e.target.closest('[data-id]');if(!t)return;
+  const n=byId(t.dataset.id);if(!n||!n.notes)return;
+  if(qn&&qn.id===n.id){clearTimeout(qhT);return}
+  if(qn&&qn.dock)return;
+  clearTimeout(qsT);
+  qsT=setTimeout(()=>{if(!dragStarted&&!document.querySelector('.sheet.show'))openQN(n.id,false)},350);
+});
+svg.addEventListener('mouseout',e=>{
+  const t=e.target.closest&&e.target.closest('[data-id]');if(!t)return;
+  clearTimeout(qsT);
+  if(qn&&!qn.dock)qHideSoon();
+});
+
+$('#ki').onclick=()=>$('#keySheet').classList.add('show');
+$('#kx').onclick=()=>$('#keySheet').classList.remove('show');
+
+/* ---------- merge links: many nodes can flow into one node ---------- */
+let linkTo=null,edgeKey=null;
+const srcs=n=>[n.p,...(n.ps||[])].filter(Boolean);
+function cleanEl(n){                            // drop line notes whose line no longer exists
+  if(!n.el)return;
+  const ok=srcs(n);Object.keys(n.el).forEach(k=>{if(!ok.includes(k))delete n.el[k]});
+  if(!Object.keys(n.el).length)delete n.el;
+}
+function closeEdge(){$('#edgeSheet').classList.remove('show');edgeKey=null}
+function openEdge(cid,pid){
+  const c=byId(cid),pp=byId(pid);if(!c||!pp)return;
+  edgeKey={c:cid,p:pid};
+  $('#eh').textContent='“'+cut(pp.t,24)+'” → “'+cut(c.t,24)+'”'+(c.p===pid?'':'   (merge / feedback link)');
+  $('#et').value=(c.el&&c.el[pid])||'';
+  $('#er').style.display=c.p===pid?'none':'';
+  $('#edgeSheet').classList.add('show');
+  setTimeout(()=>{$('#et').focus();$('#et').select()},50);
+}
+$('#ec').onclick=closeEdge;
+$('#ed').onclick=()=>{
+  if(!edgeKey)return;
+  const c=byId(edgeKey.c),pid=edgeKey.p,v=$('#et').value.trim().slice(0,120);
+  if(c&&v!==((c.el&&c.el[pid])||''))mut(()=>{c.el=c.el||{};if(v)c.el[pid]=v;else delete c.el[pid];cleanEl(c)});
+  closeEdge();
+};
+$('#er').onclick=()=>{
+  if(!edgeKey)return;
+  const c=byId(edgeKey.c),pid=edgeKey.p;
+  if(c)mut(()=>{c.ps=(c.ps||[]).filter(i=>i!==pid);if(!c.ps.length)delete c.ps;cleanEl(c)});
+  closeEdge();toast('Link removed');
+};
+$('#et').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();$('#ed').click()}});
+function linkTap(id){                           // id = a node flowing INTO linkTo
+  const t=byId(linkTo),s=byId(id);if(!s||!t)return;
+  if(id===linkTo){toast('Pick a different node');return}
+  if(t.p===id){toast('That is already its parent');return}
+  if((t.ps||[]).includes(id)){mut(()=>{t.ps=t.ps.filter(i=>i!==id);if(!t.ps.length)delete t.ps;cleanEl(t)});toast('Link removed');return}
+  mut(()=>{t.ps=[...(t.ps||[]),id]});
+  toast('“'+cut(s.t,16)+'” → “'+cut(t.t,16)+'”');
+}
+$('#bk').onclick=()=>{
+  if(linkTo){linkTo=null;render();toast('Merge mode off');return}
+  const n=sel&&byId(sel);if(!n)return;
+  linkTo=n.id;render();
+  toast('Tap each node that should merge into “'+cut(n.t,18)+'”. Tap it again to unlink. Tap empty space or ✓ Done to finish.');
+};
+
+/* ---------- details modal ---------- */
+function openNode(id){
+  closeQN();
+  const n=byId(id);editId=id;pickCols=tcols(n).slice();editImg=n.img||null;editIr=n.ir||1;
+  $('#nt').value=n.t;$('#nn').value=n.notes||'';$('#nu').value=n.url||'';$('#ni').value='';
+  $('#nl').innerHTML=['',...M.lanes].map(l=>`<option value="${esc(l)}"${l===n.lane?' selected':''}>${esc(l||'— none —')}</option>`).join('');
+  $('#nz').value=n.due||'';
+  document.querySelectorAll('.ckrow').forEach((r,i)=>{const c=(n.ck||[])[i];r.querySelector('.ckt').value=c?c.t:'';r.querySelector('.ckd').checked=!!(c&&c.d)});
+  const inc=srcs(n).map(byId).filter(Boolean);
+  $('#inl').innerHTML=inc.length>1?'<label>Notes on incoming lines (shown on each line)</label>'+inc.map(x=>`<div class="ckrow"><span style="flex:none;max-width:38%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(cut(x.t,16))} →</span><input class="eln" data-p="${x.id}" maxlength="120" placeholder="process / transformation…" value="${esc((n.el&&n.el[x.id])||'')}"></div>`).join(''):'';
+  drawSw();showPrev();$('#nodeSheet').classList.add('show');
+  setTimeout(()=>{$('#nt').focus();$('#nt').select()},50);
+}
+// multi-select swatches: tap to add/remove a colour; the first one picked is the main colour
+function drawSw(){
+  $('#sw').innerHTML=COLORS.map(c=>`<div><i data-c="${c}" style="background:${c}" class="${pickCols.includes(c)?'on':''}"></i><small>${esc(lab(c))}</small></div>`).join('');
+  $('#sw').querySelectorAll('i').forEach(i=>i.onclick=()=>{
+    const c=i.dataset.c,k=pickCols.indexOf(c);
+    if(k>=0)pickCols.splice(k,1);else pickCols.push(c);
+    drawSw();
+  });
+}
+function showPrev(){const p=$('#np');if(editImg){p.src=editImg;p.style.display='block'}else{p.removeAttribute('src');p.style.display='none'}$('#nr').disabled=!editImg}
+function loadImg(file){
+  return new Promise((ok,no)=>{
+    const fr=new FileReader();
+    fr.onload=()=>{const im=new Image();im.onload=()=>{
+      const s=Math.min(1,480/Math.max(im.width,im.height)),c=document.createElement('canvas');
+      c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);
+      const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);
+      ok({img:c.toDataURL('image/jpeg',.72),ir:c.height/c.width});
+    };im.onerror=no;im.src=fr.result};
+    fr.onerror=no;fr.readAsDataURL(file);
+  });
+}
+$('#ni').onchange=async e=>{
+  const f=e.target.files[0];if(!f)return;
+  try{const r=await loadImg(f);editImg=r.img;editIr=r.ir;showPrev()}catch(x){toast('Could not read that image')}
+};
+$('#nr').onclick=()=>{editImg=null;$('#ni').value='';showPrev()};
+// Cancel: a brand-new node that was never confirmed is discarded
+$('#nc').onclick=()=>{
+  $('#nodeSheet').classList.remove('show');
+  if(editId&&editId===freshId){const id=freshId;freshId=null;mut(()=>{M.nodes=M.nodes.filter(x=>x.id!==id)});sel=null;render()}
+  freshId=null;
+};
+// Enter in the title box = Done (so a new node is created with just a title)
+$('#nt').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();$('#nd').click()}});
+$('#dt').onclick=()=>{$('#nz').value=ymd(new Date())};
+$('#dm').onclick=()=>{const d=new Date();d.setDate(d.getDate()+1);$('#nz').value=ymd(d)};
+$('#dx').onclick=()=>{$('#nz').value=''};
+$('#nd').onclick=()=>{
+  freshId=null;
+  const n=byId(editId),raw=$('#nu').value.trim(),url=normUrl(raw);
+  if(raw&&!url)toast('That link doesn’t look valid, so it was not saved');
+  mut(()=>{
+    n.t=$('#nt').value.trim()||'Untitled';n.notes=$('#nn').value;n.lane=$('#nl').value;
+    n.cs=pickCols.slice();n.c=n.cs[0]||DEF;
+    const z=$('#nz').value;if(z)n.due=z;else delete n.due;
+    const ck=[...document.querySelectorAll('.ckrow')].map(r=>({t:r.querySelector('.ckt').value.trim(),d:r.querySelector('.ckd').checked})).filter(c=>c.t);
+    if(ck.length)n.ck=ck;else delete n.ck;
+    if(url)n.url=url;else delete n.url;
+    const rows=document.querySelectorAll('.eln');
+    if(rows.length){n.el=n.el||{};rows.forEach(i=>{const v=i.value.trim();if(v)n.el[i.dataset.p]=v;else delete n.el[i.dataset.p]});cleanEl(n)}
+    if(editImg){n.img=editImg;n.ir=editIr}else{delete n.img;delete n.ir}
+  });
+  $('#nodeSheet').classList.remove('show');if(M.layout==='lane')fit();
+};
+
+/* ---------- maps list ---------- */
+async function showMaps(){
+  $('#mapsSheet').classList.add('show');$('#maps').textContent='Loading…';
+  const list=await run('listMaps');
+  $('#maps').innerHTML=list.map(m=>`<div class="map"><span data-o="${m.id}">${esc(m.name)}</span><button data-x="${m.id}">✕</button></div>`).join('')||'No maps yet';
+  $('#maps').querySelectorAll('[data-o]').forEach(e=>e.onclick=()=>{$('#mapsSheet').classList.remove('show');openMap(e.dataset.o)});
+  $('#maps').querySelectorAll('[data-x]').forEach(e=>e.onclick=async()=>{
+    if(!confirm('Move this map to Drive trash?'))return;
+    await run('deleteMap',e.dataset.x);
+    if(M&&M.id===e.dataset.x){M=null;$('#mapsSheet').classList.remove('show');init()}else showMaps();
+  });
+}
+$('#bm').onclick=$('#title').onclick=showMaps;
+$('#cm').onclick=()=>$('#mapsSheet').classList.remove('show');
+$('#nm').onclick=async()=>{
+  const n=(prompt('Map name')||'').trim();if(!n)return;
+  await save();$('#mapsSheet').classList.remove('show');setM(await run('createMap',n));
+};
+function setM(d){M=d;M.legend=M.legend||{};focus.clear();fmode='any';sel=null;linkTo=null;hist=[];fut=[];isDirty=false;status('Saved');try{localStorage.setItem('mm_last',d.id)}catch(e){}render();fit()}
+async function openMap(id){await save();$('#title').textContent='Loading…';setM(await run('loadMap',id))}
+
+/* ---------- share as PNG ---------- */
+$('#sh').onclick=async()=>{
+  const D=draw(false),b=D.b,pad=30,ent=COLORS.filter(lab),base=b.y2;let s=D.s;
+  ent.forEach((c,i)=>{const y=base+26+i*22;s+=`<circle cx="${b.x1+8}" cy="${y-4}" r="6" fill="${c}"/><text x="${b.x1+22}" y="${y}" font-size="12" fill="#444" font-family="system-ui,sans-serif">${esc(lab(c))} (${cnt(c)})</text>`});
+  if(ent.length){b.y2=base+26+ent.length*22;b.x2=Math.max(b.x2,b.x1+220)}
+  const w=b.x2-b.x1+pad*2,h=b.y2-b.y1+pad*2;
+  const x=`<svg xmlns="http://www.w3.org/2000/svg" width="${w*2}" height="${h*2}" viewBox="${b.x1-pad} ${b.y1-pad} ${w} ${h}"><rect x="${b.x1-pad}" y="${b.y1-pad}" width="${w}" height="${h}" fill="#fff"/>${s}</svg>`;
+  const img=new Image();img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(x);
+  try{await img.decode()}catch(e){return toast('Could not render image')}
+  const c=document.createElement('canvas');c.width=w*2;c.height=h*2;c.getContext('2d').drawImage(img,0,0);
+  c.toBlob(async blob=>{
+    const f=new File([blob],M.name+'.png',{type:'image/png'});
+    try{if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:M.name});return}}catch(e){if(e.name==='AbortError')return}
+    window.open(URL.createObjectURL(blob),'_blank');
+    toast('Share sheet is blocked inside Apps Script. Image opened — long-press to save/share.');
+  });
+};
+
+/* ---------- start ---------- */
+async function init(){
+  try{
+    const list=await run('listMaps');
+    let id=null;try{id=localStorage.getItem('mm_last')}catch(e){}
+    if(!list.length)return setM(await run('createMap','My first map'));
+    await openMap(list.find(m=>m.id===id)?id:list[0].id);
+  }catch(e){$('#title').textContent='Error';toast('Failed to load: '+(e.message||e))}
+}
+init();
+</script>
+<script>if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js')</script>
+</body></html>
